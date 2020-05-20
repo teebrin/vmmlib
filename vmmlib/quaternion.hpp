@@ -95,7 +95,7 @@ public:
 
     template< size_t D > void set( const Matrix< D, D, T >& rotation_matrix_ );
 
-    void set( T ww, T xx, T yy, T zz);
+    void set( T xx, T yy, T zz, T ww);
     void set( Vector< 3, T >& xyz, T w );
 
     template< typename input_iterator_t >
@@ -167,18 +167,18 @@ public:
     static T dot( const Quaternion< T >& a, const Quaternion< T >& b );
 
     // returns multiplicative inverse
-    Quaternion inverse();
+    Quaternion inverse() const;
 
     void normal( const Quaternion& aa, const Quaternion& bb, const Quaternion& cc,  const Quaternion& dd );
     Quaternion normal( const Quaternion& aa, const Quaternion& bb, const Quaternion& cc );
 
     // to combine two rotations, multiply the respective quaternions before using rotate
     // instead of rotating twice for increased performance, but be aware of non-commutativity!
-    void rotate( T theta, const Vector< 3, T >& a );
-    Quaternion rotate( T theta, Vector< 3, T >& axis, const Vector< 3, T >& a );
-    Quaternion rotate_x( T theta, const Vector< 3, T >& a );
-    Quaternion rotate_y( T theta, const Vector< 3, T >& a );
-    Quaternion rotate_z( T theta, const Vector< 3, T >& a );
+    static void rotate( T theta, const Vector< 3, T >& a );
+    static Quaternion rotate( T theta, Vector< 3, T >& axis, const Vector< 3, T >& a );
+    static Quaternion rotate_x( T theta, const Vector< 3, T >& a );
+    static Quaternion rotate_y( T theta, const Vector< 3, T >& a );
+    static Quaternion rotate_z( T theta, const Vector< 3, T >& a );
 
     static Quaternion slerp( T a, const Quaternion& p,
         const Quaternion& q, const T epsilon = 1e-13 );
@@ -504,7 +504,7 @@ T Quaternion< T >::squared_abs() const
 
 
 template < typename T >
-Quaternion< T > Quaternion< T >::inverse()
+Quaternion< T > Quaternion< T >::inverse() const
 {
     Quaternion< T > q( *this );
     q.conjugate();
@@ -719,7 +719,7 @@ template < typename T >
 Quaternion< T >
 Quaternion< T >::operator-( const Vector< 3, T >& a ) const
 {
-    return Quaternion( w(), x() - a.x(), y() - a.y(), z() - a.z() );
+    return Quaternion( x() - a.x(), y() - a.y(), z() - a.z(), w() );
 }
 
 
@@ -728,10 +728,10 @@ template < typename T >
 Quaternion< T >
 Quaternion< T >::operator*( const Vector< 3, T >& a ) const
 {
-    return Quaternion( -x() * a.x() - y() * a.y() - z() * a.z(),
-                        w() * a.x() + y() * a.z() - z() * a.y(),
-                        w() * a.y() + z() * a.x() - x() * a.z(),
-                        w() * a.z() + x() * a.y() - y() * a.x()  );
+    return Quaternion( w() * a.x() +     0       + y() * a.z() - z() * a.y(),
+                       w() * a.y() - x() * a.z() +     0       + z() * a.x(),
+                       w() * a.z() + x() * a.y() - y() * a.x() +     0      ,
+                           0       - x() * a.x() - y() * a.y() - z() * a.z() );
 }
 
 
@@ -844,7 +844,7 @@ Quaternion< T > Quaternion< T >::rotate( T theta, Vector< 3, T >& axis,
     Quaternion< T > p = a;
     T alpha = theta / 2;
     Quaternion< T > q = std::cos( alpha ) + ( std::sin( alpha ) * axis.normalize() );
-    return q * p * q.invert();
+    return q * p * q.inverse();
 }
 
 
@@ -855,7 +855,7 @@ Quaternion< T > Quaternion< T >::rotate_x( T theta, const Vector< 3, T >& a )
     Quaternion< T > p = a;
     T alpha = theta / 2;
     Quaternion< T > q = std::cos( alpha ) + ( std::sin( alpha ) *  QUATERI );
-    return q * p * q.invert();
+    return q * p * q.inverse();
 }
 
 
@@ -866,7 +866,7 @@ Quaternion< T > Quaternion< T >::rotate_y( T theta, const Vector< 3, T >& a )
     Quaternion< T > p = a;
     T alpha = theta / 2;
     Quaternion< T > q = std::cos( alpha ) + ( std::sin( alpha ) *  QUATERJ );
-    return q * p * q.invert();
+    return q * p * q.inverse();
 }
 
 
